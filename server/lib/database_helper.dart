@@ -42,16 +42,16 @@ void main(List<String> args) {
   print('Strart working...');
   DatabaseHelper dbHelper = createDatabase('data', 'messenger.db');
 
-  print('Create Busy_Fox: ${dbHelper.users.createUser('Busy_Fox', 'BF_Hash256', 'BF_salt')}');
-  print(dbHelper.users.getUserByUsername('Busy_Fox'));
-  int userId = dbHelper.users.getUserByUsername('Busy_Fox')?['id'] ?? 1;
-  print('Busy_Fox\'s salt: ${dbHelper.users.getUserSalt(userId)}');
+  print('Create Busy_Fox: ${dbHelper.users.create('Busy_Fox', 'BF_Hash256', 'BF_salt')}');
+  print(dbHelper.users.getByUsername('Busy_Fox'));
+  int userId = dbHelper.users.getByUsername('Busy_Fox')?['id'] ?? 1;
+  print('Busy_Fox\'s salt: ${dbHelper.users.getSalt(userId)}');
 
   print('Change username: ${dbHelper.users.changeUsername(userId, 'Busy_Fox_13')}');
-  print('Change password_hash: ${dbHelper.users.changeUserPassword(userId, 'BF_hash256_2')}');
-  print(dbHelper.users.getUserByUsername('Busy_Fox_13'));
+  print('Change password_hash: ${dbHelper.users.changePassword(userId, 'BF_hash256_2')}');
+  print(dbHelper.users.getByUsername('Busy_Fox_13'));
 
-  print('Create Busy_Fox: ${dbHelper.users.createUser('Busy_Fox', 'BF_Hash256', 'BF_salt')}');
+  print('Create Busy_Fox: ${dbHelper.users.create('Busy_Fox', 'BF_Hash256', 'BF_salt')}');
   dbHelper.users.changeUsername(2, 'Busy_Fox_13');
 
   dbHelper.close();
