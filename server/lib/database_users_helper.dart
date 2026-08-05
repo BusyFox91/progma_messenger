@@ -20,7 +20,7 @@ class Users {
     ''');
   }
 
-  bool createUser(String username, String passwordHash, String salt) {
+  bool create(String username, String passwordHash, String salt) {
     final stmt = _db.prepare(
       'INSERT INTO users (username, password_hash, password_salt) VALUES (?, ?, ?)'
     );
@@ -35,7 +35,7 @@ class Users {
     }
   }
 
-  bool deleteUser(int userId) {
+  bool delete(int userId) {
     final stmt = _db.prepare(
       'DELETE FROM users WHERE id = ?'
     );
@@ -56,7 +56,7 @@ class Users {
     }
   }
 
-  Row? getUserById(int userId) {
+  Row? getById(int userId) {
     final stmt = _db.prepare(
       'SELECT * FROM users WHERE id = ? LIMIT 1'
     );
@@ -72,7 +72,7 @@ class Users {
     }
   }
 
-  Row? getUserByUsername(String username) {
+  Row? getByUsername(String username) {
     final stmt = _db.prepare(
       'SELECT * FROM users WHERE username = ? LIMIT 1'
     );
@@ -88,7 +88,7 @@ class Users {
     }
   }
 
-  String? getUserSalt(int userId) {
+  String? getSalt(int userId) {
     final ResultSet result = _db.select(
       'SELECT password_salt FROM users WHERE id = ?',
       [userId],
@@ -102,7 +102,7 @@ class Users {
   }
 
   bool changeUsername(int userId, String newUsername) {
-    final String? oldUsername = getUserById(userId)?['username'];
+    final String? oldUsername = getById(userId)?['username'];
     if (oldUsername == null) { 
       print('Error. Username wasn\'t changed. userId $userId wasn\'t found');
       return false; 
@@ -111,12 +111,12 @@ class Users {
       print('Warning. Username wasn\'t changed. Old username matches new');
       return false;
     }
+
     final stmt = _db.prepare(
       'UPDATE users SET username = ? WHERE id = ?',
     );
     try {
       stmt.execute([newUsername, userId],);
-
       return true;
     } catch(e) {
       print('Error. Changing username error:\n$e');
@@ -126,13 +126,12 @@ class Users {
     }
   }
 
-  bool changeUserPassword(int userId, String newPasswordHash) {
+  bool changePassword(int userId, String newPasswordHash) {
     final stmt = _db.prepare(
       'UPDATE users SET password_hash = ? WHERE id = ?',
     );
     try {
       stmt.execute([newPasswordHash, userId],);
-      
       if(_db.updatedRows == 1) {
         return true;
       } else {
