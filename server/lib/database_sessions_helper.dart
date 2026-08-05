@@ -20,7 +20,7 @@ class Sessions {
     ''');
   }
 
-  bool createSession(int userId, String token, DateTime expiresAt) {
+  bool create(int userId, String token, DateTime expiresAt) {
     final stmt = _db.prepare(
       'INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)'
     );
@@ -35,7 +35,7 @@ class Sessions {
     }
   }
 
-  bool deleteSession(int sessionId) {
+  bool delete(int sessionId) {
     final stmt = _db.prepare(
       'DELETE FROM sessions WHERE id = ?'
     );
@@ -56,7 +56,14 @@ class Sessions {
     }
   }
 
-  Row? findSessionByToken(String token) {
+  int deleteExpired() {
+    _db.execute(
+      'DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP',
+    );
+    return _db.updatedRows;
+  }
+
+  Row? findByToken(String token) {
     final stmt = _db.prepare(
       'SELECT * FROM sessions WHERE token = ? LIMIT 1'
     );
