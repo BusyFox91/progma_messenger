@@ -4,12 +4,10 @@ import 'package:sqlite3/sqlite3.dart';
 class Sessions {
   final Database _db;
 
-  Sessions(this._db) {
-    initTable();
-  }
+  Sessions(this._db);
 
-  void initTable() {
-    _db.execute('''
+  static void initTable(Database db) {
+    db.execute('''
       CREATE TABLE IF NOT EXISTS sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         token TEXT UNIQUE NOT NULL,
@@ -57,10 +55,15 @@ class Sessions {
   }
 
   int deleteExpired() {
-    _db.execute(
-      'DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP',
-    );
-    return _db.updatedRows;
+    try {
+      _db.execute(
+        'DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP',
+      );
+      return _db.updatedRows;
+    } catch(e) {
+      print('Error. Deletion expired sessions error:\n$e');
+      return -1;
+    }
   }
 
   Row? findByToken(String token) {
