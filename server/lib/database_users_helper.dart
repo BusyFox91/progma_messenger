@@ -4,18 +4,17 @@ import 'package:sqlite3/sqlite3.dart';
 class Users {
   final Database _db;
 
-  Users(this._db) {
-    _initTable();
-  }
+  Users(this._db);
 
-  void _initTable() {
-    _db.execute('''
+  static void initTable(Database db) {
+    db.execute('''
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         password_salt TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        deleted_since DATETIME NULL
       );
     ''');
   }
@@ -29,6 +28,27 @@ class Users {
       return true;
     } catch(e) {
       print('Error. User creation error:\n$e');
+      return false;
+    } finally {
+      stmt.close();
+    }
+  }
+
+  bool markDeleted(int userId) {
+    final Row? userRow = getById(userId);
+    if (userRow == null) { 
+      print('Error. User wasn\'t marked as deleted. userId $userId wasn\'t found');
+      return false; 
+    }
+
+    final stmt = _db.prepare(
+      'UPDATE users SET deleted_since = CURRENT_TIMESTAMP WHERE id = ?'
+    );
+    try {
+      stmt.execute([userId]);
+      return true;
+    } catch(e) {
+      print('Error. Marking deleted error:\n$e');
       return false;
     } finally {
       stmt.close();
@@ -53,6 +73,18 @@ class Users {
       return false;
     } finally {
       stmt.close();
+    }
+  }
+
+  int deleteExpired() {
+    try {
+      _db.execute(
+        'DELETE FROM users WHERE deleted_since IS NOT NULL AND deleted_since < datetime(\'now\', \'-30 days\')',
+      );
+      return _db.updatedRows;
+    } catch(e) {
+      print('Error. Cleaning deleted accounts error:\n$e');
+      return -1;
     }
   }
 
@@ -102,7 +134,7 @@ class Users {
   }
 
   bool changeUsername(int userId, String newUsername) {
-    final String? oldUsername = getById(userId)?['username'];
+    final String? oldUsername = getById(userId)?['username'] as String?;
     if (oldUsername == null) { 
       print('Error. Username wasn\'t changed. userId $userId wasn\'t found');
       return false; 
@@ -127,17 +159,22 @@ class Users {
   }
 
   bool changePassword(int userId, String newPasswordHash) {
+    final String? oldPasswordHash = getById(userId)?['password_hash'] as String?;
+    if (oldPasswordHash == null) { 
+      print('Error. Password wasn\'t changed. userId $userId wasn\'t found');
+      return false; 
+    }
+    if (oldPasswordHash == newPasswordHash) {
+      print('Warning. Password wasn\'t changed. Old password matches new');
+      return false;
+    }
+    
     final stmt = _db.prepare(
       'UPDATE users SET password_hash = ? WHERE id = ?',
     );
     try {
       stmt.execute([newPasswordHash, userId],);
-      if(_db.updatedRows == 1) {
-        return true;
-      } else {
-        print('Warning. No such user_id: $userId');
-        return false;
-      }
+      return true;
     } catch(e) {
       print('Error. Changing user\'s password error:\n$e');
       return false;
